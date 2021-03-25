@@ -1,0 +1,17 @@
+- hosts: os
+  vars_files:
+          - "{{ansible_facts['distribution']}}_{{ansible_facts['distribution_major_version']}}.yml"
+  tasks:
+    - name: "Installing the Webserver"
+      package:
+              name: "{{ package }}"
+              state: present
+    - name: "Createing the WebPage"
+      copy:
+              dest: "{{ dir }}/index.html"
+              content: "hi...from the {{ansible_facts['distribution']}} os"
+    - name: "Start the Service"
+      service:
+              name: "{{ package }}"
+              state: started
+              enabled: yes

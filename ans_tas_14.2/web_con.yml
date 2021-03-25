@@ -1,0 +1,13 @@
+- hosts: container
+  tasks:
+          - name: "Configuring teh webserver"
+            package:
+              name: httpd
+              state: present
+          - name: "web page"
+            copy:
+                    dest: /var/www/html/index.html
+                    content: "Hi.. From the docker Container"
+          - name: "Start the webserver"
+            command: /usr/sbin/httpd
+

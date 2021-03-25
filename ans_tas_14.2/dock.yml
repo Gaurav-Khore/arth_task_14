@@ -1,0 +1,60 @@
+- hosts : localhost
+  vars_prompt:
+          - name: con
+            prompt: "Enter the container Name"
+            private: no
+          - name: por
+            prompt: "Enter the port Number"
+            private: no
+  tasks:
+  - name : "Docker yum"
+    yum_repository:
+      name: "docker"
+      description: "Yum for docker"
+      baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+      gpgcheck: no
+  - name: "Docker install"
+    command: "yum install docker-ce --nobest -y"
+  - name: "dir in target node"
+    file:
+      state: directory
+      path: "/root/dock_con/"
+  - name: "docker service start"
+    service:
+      name: docker
+      state: started
+      enabled: yes
+  - pip:
+      name: docker-py
+  - name: "Creating Dockerfile"
+    copy: 
+      dest: /root/ansible_ws/ans_tas_14.2/Dockerfile
+      content: "FROM centos:latest\nRUN yum -y update\nRUN yum install -y openssh-server\nRUN yum install -y openssh-clients\nRUN ssh-keygen -A\nRUN echo root:root | chpasswd\nEXPOSE 22\n CMD /usr/sbin/sshd -D\n"
+  - name: "Image Creation"
+    command: "docker build -t ssh_img /root/ansible_ws/ans_tas_14.2/"
+  - name: "Launch Container using the above image created"
+    docker_container:
+            name: "{{ con }}"
+            image: ssh_img
+            state: started
+            ports:
+                    - "8080:{{ por }}"
+ 
+
+
+  - name: "Container ip"
+    command: docker inspect --format '{''{ .NetworkSettings.IPAddress}''}' {{ con }}
+    register: con_ip
+  - name: "inventory Update"
+    blockinfile:
+            path: /root/ansible_ws/ip.txt
+            block: |
+                    [container]
+                    {{ con_ip.stdout }} ansible_user=root ansible_ssh_pass=root ansible_connection=ssh
+  - name: "print"
+    debug:
+            msg: " {{ con_ip.stdout }} "
+
+
+
+
